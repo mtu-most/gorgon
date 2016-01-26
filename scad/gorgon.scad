@@ -58,28 +58,112 @@ Gorgon_mount_2 = [45, 33.4];
 Gorgon_mount_3 = [5, 33.4];
 Gorgon_mounts = [Gorgon_mount_0, Gorgon_mount_1, Gorgon_mount_2, Gorgon_mount_3];
 
+// dimensions and points for the printable bearing:
+b = 5;
+h = 8;
+r = 8;
+h2 = 2;
+h3 = 1;
+
+module glass_holddown() {
+	t_glass = 6.5; // thickness of the glass
+	r_pivot = 3;
+	
+	difference() {
+		union() {
+			intersection() {
+				cube([25, 10, 15]);
+		
+				scale([1, 0.5, 1])
+					cylinder(r = 25, h = 31, center = true);
+			}
+		
+			translate([r_pivot, 0, 0])
+				hull()
+					for (i = [0, r_pivot - t_glass - 1])
+						translate([0, i, 0])
+							cylinder(r = r_pivot, h = 15);
+		}
+		
+		translate([2 * r_pivot + 5, 0, 7.5])
+			rotate([270, 0, 0])
+				hull()
+					for (i = [-12, 0])
+						rotate([0, i, 0])
+							cylinder(r = 2.75, h = 22);
+	}
+}
+
+
+bearing_points = bearing_shape_points(
+  b = b,
+  h = h,
+  r = r,
+  h2 = h2,
+  h3 = h3
+);
+id_bearing = 20;
+w_recepticle = id_bearing + 2 * r + 6;
+h_recepticle = bearing_points[6][1] - 6;
+
+module frame_wire_bearing() {
+  difference() {
+	  	union() {
+	  		translate([0, 0, h_recepticle])
+		  		cube([2 * (id_bearing + 4), 2 * (id_bearing + 4), h_recepticle], center = true);
+
+			// mount point
+			translate([0, id_bearing + 2, h_recepticle / 2])
+				cube([2 * (id_bearing + 12), 4, 2 * h_recepticle], center = true);
+				
+		}
+      bearing_body(
+        id_bearing = id_bearing,
+        clearance = 0.4,
+        bearing_points = bearing_points
+      );
+
+     translate([0, 0, 7])
+        cylinder(r = id_bearing / 2 + 1.4, h = h_recepticle + 20);
+        
+      // mounting holes
+			translate([0, id_bearing + 1, 7])
+		    rotate([90, 0, 0])
+				  for (i = [-1, 1], j = [-1, 1])
+				  	translate([i * (id_bearing + 8), j * 10, 0])
+				  		cylinder(r = 2.6, h = 10, center = true);
+      		
+  }
+
+  difference() {
+    union() {
+    	rotate([0, 0, 90])
+		    bearing_body(
+		      id_bearing = id_bearing,
+		      clearance = 0.0,
+		      flats = true,
+		      bearing_points = bearing_points
+		    );
+
+      cylinder(r = id_bearing / 2 + 1, h = bearing_points[6][1] + 1, $fn = 96);
+
+			rotate([0, 0, 180])
+				translate([0, 0, 0])
+					rotate([0, 90, 0])
+				    link_half(male = true);
+    }
+
+    translate([0, 0, -1])
+    	scale([1.5, 1.2, 1])
+     	 cylinder(r = id_bearing / 2 - 5, h = bearing_points[6][1] + 3);
+  }
+ }
+
 // following requires the printable_bearing file
 // print with the long side against the build platform and support for cable carrier and bearing collars
 module carriage_wire_bearing() {
-  b = 5;
-  h = 8;
-  r = 8;
-  h2 = 2;
-  h3 = 1;
-  bearing_points = bearing_shape_points(
-    b = b,
-    h = h,
-    r = r,
-    h2 = h2,
-    h3 = h3
-  );
-
-  id_rotating_latch = 20;
-  w_recepticle = id_rotating_latch + 2 * r + 6;
-  h_recepticle = bearing_points[6][1] - 6;
-
   difference() {
-    translate([0, 0, h_recepticle / 2 - 1])
+    translate([0, 0, h_recepticle / 2])
       rotate([0, 0, 90])
         standoff_mount(
           board = Gorgon,
@@ -93,25 +177,25 @@ module carriage_wire_bearing() {
 
 
       bearing_body(
-        id_rotating_latch = id_rotating_latch,
-        recepticle = true,
+        id_bearing = id_bearing,
+        clearance = 0.4,
         bearing_points = bearing_points
       );
 
-      translate([0, 0, 5])
-        cylinder(r = id_rotating_latch / 2, h = h_recepticle + 2);
+      translate([0, 0, 6])
+        cylinder(r = id_bearing / 2 + 1.4, h = h_recepticle + 2);
   }
 
   difference() {
     union() {
       bearing_body(
-        id_rotating_latch = id_rotating_latch,
-        recepticle = false,
+        id_bearing = id_bearing,
+        clearance = 0.0,
         flats = true,
         bearing_points = bearing_points
       );
 
-      cylinder(r = id_rotating_latch / 2 + 1, h = bearing_points[6][1] + 1, $fn = 96);
+     cylinder(r = id_bearing / 2 + 1, h = bearing_points[6][1] + 1, $fn = 96);
 
 			rotate([0, 0, 90])
 				translate([0, 0, 0])
@@ -121,7 +205,7 @@ module carriage_wire_bearing() {
 
     translate([0, 0, -1])
     	scale([1, 1.5, 1])
-      cylinder(r = id_rotating_latch / 2 - 4, h = bearing_points[6][1] + 3);
+      cylinder(r = id_bearing / 2 - 4, h = bearing_points[6][1] + 3);
   }
 }
 
@@ -187,28 +271,46 @@ module bowden_wire_guide() {
 						cylinder(r = d_mount / 2, h = t_mount, center = true);
 
 				rotate([0, 90, 0])
-					difference() {
-						hull() {
-							cube([0.1, 2 * (cc_h_makerslide_axles / 2 - 6), d_mount], center = true);
-
-							translate([-offset_opening, 0, 0])
-								cylinder(r = cc_h_makerslide_axles / 2 - 6, h = d_mount, center = true);
-						}
-
-							translate([-offset_opening, 0, 0]) {
-								cylinder(r = 6, h = d_mount + 1, center = true);
-
-								rotate([0, 0, 180])
-									linear_extrude(convexity = 10, height = d_mount + 0.5, twist = 100, slices = 50, center = true)
-										translate([1, 0, 0])
-											square([15, 15]);
-							}
-					}
-		}
+					wire_guide_shape(
+						h_guide = d_mount,
+						w_guide = 2 * (cc_h_makerslide_axles / 2 - 6),
+						d_opening = 12,
+						offset_opening = offset_opening
+					);
+			}
 
 		for (i = [-1, 1])
 			translate([0, i * cc_h_makerslide_axles / 2, 0])
 				cylinder(r = 2.6, h = 4, center = true);
+	}
+}
+
+module wire_guide_shape(
+	h_guide,
+	w_guide,
+	d_opening,
+	offset_opening
+) {
+	difference() {
+		hull() {
+			cube([0.1, w_guide, h_guide], center = true);
+
+			translate([-offset_opening, 0, 0])
+				cylinder(r = w_guide / 2, h = h_guide, center = true);
+		}
+
+			translate([-offset_opening, 0, 0]) {
+				cylinder(r = d_opening / 2, h = h_guide + 1, center = true);
+
+				rotate([0, 0, 180])
+					linear_extrude(convexity = 10, height = h_guide + 0.5, twist = 100, slices = 50, center = true)
+						translate([1, 0, 0])
+							square([(w_guide - d_opening) + 5, (w_guide - d_opening) + 5]);
+			}
+
+			// remove anything extending in +x
+			translate([w_guide / 2, 0, 0])
+						cube([w_guide, w_guide, h_guide + 1], center = true);
 	}
 }
 
@@ -242,7 +344,7 @@ module hotend_fan_mount() {
 module hotend_holder() {
 	difference() {
 		union() {
-			dovetail(length = l_dovetail - 20, width = w_dovetail, height = h_dovetail);
+			dovetail(length = l_dovetail - 20, width = w_dovetail - 0.5, height = h_dovetail - 0.5);
 
 			translate([(l_dovetail - 20) / 2 - 5, 0, 0])
 				hotend_mount_part(part = 1);

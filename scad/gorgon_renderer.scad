@@ -29,6 +29,8 @@ module render_part(part_to_render) {
   if (part_to_render == 12) gorgon_stanchion();
   
   if (part_to_render == 13) carriage_wire_bearing();
+  
+  if (part_to_render == 14) frame_wire_bearing();
 
 	if (part_to_render == 99) sandbox();
 
@@ -37,17 +39,44 @@ module render_part(part_to_render) {
 layer_height = 0.33;
 
 module sandbox() {
-	  b = 5;
-  h = 8;
-  r = 8;
-  h2 = 2;
-  h3 = 1;
-  bearing_points = bearing_shape_points(
-    b = b,
-    h = h,
-    r = r,
-    h2 = h2,
-    h3 = h3
-  );
- bearing_shape(bearing_points);
+
+	difference() {
+		rotate([0, 90, 0])
+			wire_guide_shape(
+				h_guide = 11,
+				w_guide = 20,
+				d_opening = 12,
+				offset_opening = 10
+			);
+			
+			translate([0, 0, 2])
+				cylinder(r = 5, h = 6);
+				
+			cylinder(r = 2.6, h = 10, center = true);
+	}	
 }
+
+module wire_tie_point() {
+	difference() {
+		union() {
+			cylinder(r = 10, h = 4, center = true);
+		
+			rotate([90, 0, 0])
+				scale([1, 1.4, 1])
+					rotate_extrude(convexity = 10, $fn = 48)
+						translate([8, 0, 0])
+							circle(r = 2);
+		}
+	
+		translate([0, 0, -21.5])
+			cube([40, 40, 40], center = true);
+		
+		translate([0, 5, 0]) {
+			cylinder(r = 2.6, h = 4, center = true);
+			
+			cylinder(r = 4.5, h = 4);
+		}
+	}
+}
+
+

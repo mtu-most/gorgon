@@ -1,8 +1,8 @@
 
 // makes the shape that forms a printable "bearing", which is pretty generous, but it works
 module bearing_body(
-  id_rotating_latch,
-  recepticle = false,
+  id_bearing,
+  clearance = 0.0,
   flats = false,
   bearing_points
 ) {
@@ -10,14 +10,14 @@ module bearing_body(
 
   difference() {
     rotate_extrude(convexity = 2, $fn = 96)
-      translate([id_rotating_latch / 2, 0, 0])
-        offset((recepticle) ? 2 * layer_height : 0)
+      translate([id_bearing / 2, 0, 0])
+        offset(clearance)
           bearing_shape(bearing_points = bearing_points);
 
     if (flats)
       for (i = [-1, 1])
-        translate([i * ((id_rotating_latch + w_flat_cube) / 2 + bearing_points[1][0]), 0, bearing_points[6][1] / 2]) {
-          cube([w_flat_cube, id_rotating_latch, bearing_points[6][1]], center = true);
+        translate([i * ((id_bearing + w_flat_cube) / 2 + bearing_points[1][0]), 0, bearing_points[6][1] / 2]) {
+          cube([w_flat_cube, id_bearing, bearing_points[6][1]], center = true);
 
           cube([w_flat_cube + 1, 1, bearing_points[6][1]], center = true);
         }

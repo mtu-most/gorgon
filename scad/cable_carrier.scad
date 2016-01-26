@@ -15,6 +15,7 @@ h_pin = 22.25;
 d_pin_hole = 6;
 cc_pins = 20; // distance between pin and pin female on a single link
 r_stop = 5.5; // distance from pin to end of stop on male half
+clearance = 0.2; // clearance taken from male side to improve fit
 
 //link();
 
@@ -39,17 +40,17 @@ module link_half(male=true) {
 				link_body_half(male = male);
 			
 				translate([cc_pins / 2, 0, 0])
-					cylinder(r = d_pin / 2, h = h_pin, center = true);
+					cylinder(r = d_pin / 2, h = h_pin - 2* clearance, center = true);
 				
 				// the male end has a stop on one side
 				translate([cc_pins / 2, -r_stop, 0])
-					linear_extrude(height = h_link - 2 * t_link_walls, center = true)
+					linear_extrude(height = h_link - 2 * (t_link_walls + clearance), center = true)
 						polygon([[0, 0], [w_link / 2 + 1.5, 0], [w_link / 2 - 1.5, r_stop], [0, r_stop]]);
 			}
 			
 			// open entire center
 			translate([cc_pins / 2, 0, 0])
-				cube([cc_pins, w_link - 2 * t_link_walls, h_link - 4 * t_link_walls], center = true);
+				cube([cc_pins, w_link - 2 * (t_link_walls + clearance), h_link - 4 * t_link_walls], center = true);
 			
 			// form bridge on negative side of y:
 			translate([cc_pins / 2, -w_link / 2, 0])
@@ -84,7 +85,7 @@ module link_half(male=true) {
 
 // each link has two halves - a female and a male
 module link_body_half(male = true) {
-	h_half = (male) ? h_link - 2 * t_link_walls : h_link;
+	h_half = (male) ? h_link - 2 * (t_link_walls + clearance): h_link;
 	hull() {
 		cube([t_link_walls, w_link, h_half], center = true);
 		
